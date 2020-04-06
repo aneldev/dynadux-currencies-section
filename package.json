@@ -52,9 +52,9 @@
   "author": "Anel dev",
   "license": "MIT",
   "dependencies": {
-    "dyna-currencies": "^2.0.3",
-    "dyna-node": "^0.7.90",
-    "dynadux": "^2.0.1"
+    "dyna-currencies": "^2.0.4",
+    "dyna-interfaces": "^4.2.2",
+    "dynadux": "^2.1.1"
   },
   "devDependencies": {
     "@babel/cli": "^7.1.2",

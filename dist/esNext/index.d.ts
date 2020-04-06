@@ -1,1 +1,1 @@
-export { Person, IPerson, } from "./person/Person";
+export {} from "./createCurrenciesSection";
