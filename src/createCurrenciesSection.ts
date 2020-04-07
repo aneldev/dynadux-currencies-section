@@ -26,11 +26,12 @@ export interface ICreateCurrenciesSectionState {
 }
 
 export enum EActions {
-  SET_CURRENCY = 'CURRENCIES__SET_CURRENCY',        // string, the currency, 3 chars
-  UPDATE_REQUEST = 'CURRENCIES__UPDATE_REQUEST',    // IPromisePayload
-  UPDATE_RESPONSE = 'CURRENCIES__UPDATE_RESPONSE',  // ICurrencyRates
-  UPDATE_FAIL = 'CURRENCIES__UPDATE_FAIL',          // string, the error message
-  CURRENCIES_LOADED = 'CURRENCIES__CURRENCIES_LOADED',          // void
+  SET_CURRENCY = 'CURRENCIES__SET_CURRENCY',                  // string, the currency, 3 chars
+  UPDATE_REQUEST = 'CURRENCIES__UPDATE_REQUEST',              // IPromisePayload
+  UPDATE_RESPONSE = 'CURRENCIES__UPDATE_RESPONSE',            // ICurrencyRates
+  UPDATE_RESPONSE_SAVE = 'CURRENCIES__UPDATE_RESPONSE_SAVE',  // ICurrencyRates
+  UPDATE_FAIL = 'CURRENCIES__UPDATE_FAIL',                    // string, the error message
+  CURRENCIES_LOADED = 'CURRENCIES__CURRENCIES_LOADED',        // void
 }
 
 export interface IPromisePayload<TData = void> {
@@ -82,10 +83,16 @@ export const createCurrenciesSection = (
       },
 
       [EActions.UPDATE_RESPONSE]: ({payload, dispatch}) => {
+        dispatch<ICurrencyRates>(EActions.UPDATE_RESPONSE_SAVE, payload, {blockChange: true});
+        dispatch<void>(EActions.CURRENCIES_LOADED);
+      },
+
+      [EActions.UPDATE_RESPONSE_SAVE]: ({state, payload}) => {
         const currenciesRate: ICurrencyRates = payload;
+        state.currencies.clearRates();    // For GC
+        state.currencies = null as any;   // For GC
         const newCurrencies = new DynaCurrencies();
         newCurrencies.updateRates(currenciesRate);
-        dispatch<void>(EActions.CURRENCIES_LOADED, undefined, {blockChange: true});
         return {
           loadState: 'loaded',
           currencies: newCurrencies,
