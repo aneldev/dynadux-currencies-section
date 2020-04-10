@@ -72,7 +72,7 @@ exports.createCurrenciesSection = function (_a) {
                 getCurrencies()
                     .then(function (currencyRates) {
                     dispatch(EActions.UPDATE_RESPONSE, currencyRates);
-                    resolve && resolve();
+                    resolve && resolve(currencyRates);
                 })
                     .catch(function (error) {
                     console.error('currenciesSection: cannot send request to fetch currencies', error);
@@ -129,13 +129,24 @@ exports.createCurrenciesSection = function (_a) {
             }
         });
     }); };
-    return {
+    var output = {
         set currency(newCurrency) {
             section.dispatch(EActions.SET_CURRENCY, newCurrency);
         },
         get currency() {
             return section.state.currency;
         },
+        getCurrencyRates: function () { return __awaiter(void 0, void 0, void 0, function () {
+            var _a, loadState, getCurrencyRatesDic;
+            return __generator(this, function (_b) {
+                _a = section.state, loadState = _a.loadState, getCurrencyRatesDic = _a.currencies.getCurrencyRatesDic;
+                if (loadState === "loaded") {
+                    updateIfNeeded();
+                    return [2 /*return*/, getCurrencyRatesDic()];
+                }
+                return [2 /*return*/, output.loadRates()];
+            });
+        }); },
         get hasLoadedRates() {
             return section.state.currencies.hasRates;
         },
@@ -161,5 +172,6 @@ exports.createCurrenciesSection = function (_a) {
             return currencies.convertToLabel(value, sourceCurrency, currency);
         },
     };
+    return output;
 };
 //# sourceMappingURL=createCurrenciesSection.js.map

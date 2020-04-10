@@ -29,8 +29,9 @@ export interface IPromisePayload<TData = void> {
 }
 export declare const createCurrenciesSection: ({ store, sectionName, defaultCurrency, getCurrencies, updateIfOldenThanMinutes, }: ICreateCurrenciesSectionConfig) => {
     currency: string;
+    getCurrencyRates: () => Promise<ICurrencyRates>;
     readonly hasLoadedRates: boolean;
-    loadRates: () => Promise<void>;
+    loadRates: () => Promise<ICurrencyRates>;
     convert: (value: number, sourceCurrency: string, round?: boolean) => number | null;
     convertDynaPrice: (price: IDynaPrice) => IDynaPrice | null;
     convertToLabel: (value: number, sourceCurrency: string) => IDynaLabelCurrency | null;
