@@ -6,7 +6,7 @@
 
 _In Typescript_
 
-Let's create the function that creates the app store and uses this package.
+Let's create a function that creates the app store and uses this package.
 
 ```
 import {createCurrenciesSection} from "dynadux-currencies-section";
@@ -64,7 +64,7 @@ interface ICurrencyRates {
 ```
 # createCurrenciesSection State
 
-The state is exposed to the `sectionName` of the config. But in practice, you don't have to access the State since the API has everything that you want.
+The State is at the `sectionName` of the config. But in practice, you don't have to access the State since the API has everything that you want.
 
 Maybe, the most notable is the `currency` prop.
 
@@ -107,3 +107,7 @@ Convert an IDynaPrice to the current currency.
 #### convertToLabel: (value: number, sourceCurrency: string): IDynaLabelCurrency | null
 
 Convert and create an IDynaLabelCurrency
+
+#### getCurrencyRates: async (): Promise<ICurrencyRates>
+
+It loads or returns the already loaded currencies.

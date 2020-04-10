@@ -65,4 +65,21 @@ describe('Dynadux Currencies section', () => {
     done();
   });
 
+  test('Section should load the currencies by getCurrencies()', async (done) => {
+    const appStore = createAppStore();
+
+    const currencyRates = await appStore.currencies.getCurrencyRates();
+    expect(Object.keys(currencyRates).length).toBe(3);
+
+    expect(appStore.currencies.convert(12.20, 'usd')).toBe(13.42);
+    expect(appStore.currencies.convert(12.20, 'eur')).toBe(12.20);
+
+    appStore.currencies.currency = 'usd';
+    expect(appStore.currencies.currency).toBe('usd');
+
+    expect(appStore.currencies.convert(12.20, 'usd')).toBe(12.20);
+    expect(appStore.currencies.convert(12.20, 'eur', true)).toBe(11.09);
+    done();
+  });
+
 });

@@ -27,7 +27,7 @@ export interface ICreateCurrenciesSectionState {
 
 export enum EActions {
   SET_CURRENCY = 'CURRENCIES__SET_CURRENCY',                  // string, the currency, 3 chars
-  UPDATE_REQUEST = 'CURRENCIES__UPDATE_REQUEST',              // IPromisePayload
+  UPDATE_REQUEST = 'CURRENCIES__UPDATE_REQUEST',              // IPromisePayload<ICurrencyRates>
   UPDATE_RESPONSE = 'CURRENCIES__UPDATE_RESPONSE',            // ICurrencyRates
   UPDATE_RESPONSE_SAVE = 'CURRENCIES__UPDATE_RESPONSE_SAVE',  // ICurrencyRates
   UPDATE_FAIL = 'CURRENCIES__UPDATE_FAIL',                    // string, the error message
@@ -64,12 +64,12 @@ export const createCurrenciesSection = (
       },
 
       [EActions.UPDATE_REQUEST]: ({state: {loadState}, payload, dispatch}) => {
-        const {resolve, reject}: IPromisePayload = payload;
+        const {resolve, reject}: IPromisePayload<ICurrencyRates> = payload;
         if (loadState === 'loading') return;
         getCurrencies()
           .then(currencyRates => {
             dispatch<ICurrencyRates>(EActions.UPDATE_RESPONSE, currencyRates);
-            resolve && resolve();
+            resolve && resolve(currencyRates);
           })
           .catch(error => {
             console.error('currenciesSection: cannot send request to fetch currencies', error);
@@ -119,21 +119,32 @@ export const createCurrenciesSection = (
     }
   };
 
-  return {
+  const output = {
     set currency(newCurrency: string) {
       section.dispatch<string>(EActions.SET_CURRENCY, newCurrency);
     },
     get currency(): string {
       return section.state.currency;
     },
+
+    getCurrencyRates: async (): Promise<ICurrencyRates> => {
+      const {loadState, currencies: {getCurrencyRatesDic}} = section.state;
+      if (loadState === "loaded") {
+        updateIfNeeded();
+        return getCurrencyRatesDic();
+      }
+      return output.loadRates();
+    },
     get hasLoadedRates(): boolean {
       return section.state.currencies.hasRates;
     },
-    loadRates: (): Promise<void> => {
+
+    loadRates: (): Promise<ICurrencyRates> => {
       return new Promise((resolve, reject) => {
-        section.dispatch<IPromisePayload>(EActions.UPDATE_REQUEST, {resolve, reject});
+        section.dispatch<IPromisePayload<ICurrencyRates>>(EActions.UPDATE_REQUEST, {resolve, reject});
       });
     },
+
     convert: (value: number, sourceCurrency: string, round = false): number | null => {
       updateIfNeeded();
       const {currency, currencies} = section.state;
@@ -150,4 +161,6 @@ export const createCurrenciesSection = (
       return currencies.convertToLabel(value, sourceCurrency, currency);
     },
   };
+
+  return output;
 };
