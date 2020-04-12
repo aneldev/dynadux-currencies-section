@@ -52,7 +52,7 @@
   "author": "Anel dev",
   "license": "MIT",
   "dependencies": {
-    "dyna-currencies": "^2.0.4",
+    "dyna-currencies": "^2.0.5",
     "dyna-interfaces": "^4.2.2",
     "dynadux": "^2.1.1"
   },

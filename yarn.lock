@@ -3263,10 +3263,10 @@ duplexify@^3.4.2, duplexify@^3.6.0:
     readable-stream "^2.0.0"
     stream-shift "^1.0.0"
 
-dyna-currencies@^2.0.4:
-  version "2.0.4"
-  resolved "https://registry.yarnpkg.com/dyna-currencies/-/dyna-currencies-2.0.4.tgz#11dbe977c750f09ce723d127df2f89525addd50e"
-  integrity sha512-GFerbUai5tN3EB1jGxouNXL1EcCnQ67RCSXtxNa8+UloFm0Wa0c5Uo7hBgJLbWUjSfsUm6AyKSPrhF7E+LCGlg==
+dyna-currencies@^2.0.5:
+  version "2.0.5"
+  resolved "https://registry.yarnpkg.com/dyna-currencies/-/dyna-currencies-2.0.5.tgz#57eff0ef1dccd0fde12cf9008ef1a62603b69e32"
+  integrity sha512-UfLf+BxDUC9npt9Sn8qFXJUVCs4Pu+VoIIGz9+LNAG/GQXW7QuJ56unRYN3CPAhAQhW1oM6lQAhnc+LnMZ7ZaQ==
   dependencies:
     dyna-interfaces "^4.0.4"
 
