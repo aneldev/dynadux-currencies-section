@@ -23,15 +23,17 @@ export interface ICreateCurrenciesSectionState {
   currencies: DynaCurrencies;
   error: string;
   lastUpdate: Date | null;
+  updateRequests: IPromisePayload<ICurrencyRates>[];
 }
 
 export enum EActions {
-  SET_CURRENCY = 'CURRENCIES__SET_CURRENCY',                  // string, the currency, 3 chars
-  UPDATE_REQUEST = 'CURRENCIES__UPDATE_REQUEST',              // IPromisePayload<ICurrencyRates>
-  UPDATE_RESPONSE = 'CURRENCIES__UPDATE_RESPONSE',            // ICurrencyRates
-  UPDATE_RESPONSE_SAVE = 'CURRENCIES__UPDATE_RESPONSE_SAVE',  // ICurrencyRates
-  UPDATE_FAIL = 'CURRENCIES__UPDATE_FAIL',                    // string, the error message
-  CURRENCIES_LOADED = 'CURRENCIES__CURRENCIES_LOADED',        // void
+  SET_CURRENCY = 'CURRENCIES__SET_CURRENCY',                      // string, the currency, 3 chars
+  UPDATE_REQUEST = 'CURRENCIES__UPDATE_REQUEST',                  // IPromisePayload<ICurrencyRates>
+  UPDATE_PROMISE_ADD = 'CURRENCIES__UPDATE_PROMISE_ADD',          // IPromisePayload<ICurrencyRates>
+  UPDATE_PROMISES_FULFILL = 'CURRENCIES__PROMISES_FULFILL',       // IError | null
+  UPDATE_RESPONSE_SAVE = 'CURRENCIES__UPDATE_RESPONSE_SAVE',      // ICurrencyRates
+  UPDATE_RESPONSE_FAILED = 'CURRENCIES__UPDATE_RESPONSE_FAILED',  // IError
+  CURRENCIES_UPDATED = 'CURRENCIES__CURRENCIES_UPDATED',          // void
 }
 
 export interface IPromisePayload<TData = void> {
@@ -56,6 +58,7 @@ export const createCurrenciesSection = (
       currencies: new DynaCurrencies(),
       error: '',
       lastUpdate: null,
+      updateRequests: [],
     },
     reducers: {
       [EActions.SET_CURRENCY]: ({payload}) => {
@@ -63,36 +66,51 @@ export const createCurrenciesSection = (
         return {currency};
       },
 
-      [EActions.UPDATE_REQUEST]: ({state: {loadState}, payload, dispatch}) => {
+      [EActions.UPDATE_REQUEST]: ({payload, dispatch}) => {
         const {resolve, reject}: IPromisePayload<ICurrencyRates> = payload;
-        if (loadState === 'loading') return;
+
+        dispatch<IPromisePayload<ICurrencyRates>>(EActions.UPDATE_PROMISE_ADD, {resolve, reject});
+
         getCurrencies()
           .then(currencyRates => {
-            dispatch<ICurrencyRates>(EActions.UPDATE_RESPONSE, currencyRates);
-            resolve && resolve(currencyRates);
+            dispatch<ICurrencyRates>(EActions.UPDATE_RESPONSE_SAVE, currencyRates, {blockChange: true});
+            dispatch<IError | null>(EActions.UPDATE_PROMISES_FULFILL, null);
           })
           .catch(error => {
             console.error('currenciesSection: cannot send request to fetch currencies', error);
-            dispatch<string>(EActions.UPDATE_FAIL, error.message || 'General error, cannot fetch currencies');
-            reject && reject(error);
+            dispatch<IError>(EActions.UPDATE_RESPONSE_FAILED, error);
+            dispatch<IError | null>(EActions.UPDATE_PROMISES_FULFILL, error);
           });
+
         return {
           loadState: 'loading',
           error: '',
         };
       },
 
-      [EActions.UPDATE_RESPONSE]: ({payload, dispatch}) => {
-        dispatch<ICurrencyRates>(EActions.UPDATE_RESPONSE_SAVE, payload, {blockChange: true});
-        dispatch<void>(EActions.CURRENCIES_LOADED);
+      [EActions.UPDATE_PROMISE_ADD]: ({state: {updateRequests}, payload, blockChange}) => {
+        const updateRequest: IPromisePayload<ICurrencyRates> = payload;
+        blockChange();
+        return {
+          updateRequests: updateRequests.concat(updateRequest),
+        };
       },
 
-      [EActions.UPDATE_RESPONSE_SAVE]: ({state, payload}) => {
+      [EActions.UPDATE_PROMISES_FULFILL]: ({state: {currencies, updateRequests}, payload, blockChange}) => {
+        const error: IError | boolean = payload;
+        if (!error) updateRequests.forEach(ur => ur.resolve && ur.resolve(currencies.getCurrencyRatesDic()));
+        if (error) updateRequests.forEach(ur => ur.reject && ur.reject(currencies.getCurrencyRatesDic()));
+        blockChange();
+        return {updateRequests: []};
+      },
+
+      [EActions.UPDATE_RESPONSE_SAVE]: ({state, payload, dispatch}) => {
         const currenciesRate: ICurrencyRates = payload;
         state.currencies.clearRates();    // For GC
         state.currencies = null as any;   // For GC
         const newCurrencies = new DynaCurrencies();
         newCurrencies.updateRates(currenciesRate);
+        dispatch<void>(EActions.CURRENCIES_UPDATED);
         return {
           loadState: 'loaded',
           currencies: newCurrencies,
@@ -100,11 +118,11 @@ export const createCurrenciesSection = (
         };
       },
 
-      [EActions.UPDATE_FAIL]: ({state: {currencies}, payload}) => {
-        const errorMessage: string = payload;
+      [EActions.UPDATE_RESPONSE_FAILED]: ({state: {currencies}, payload, dispatch}) => {
+        const error: IError = payload;
         return {
           loadState: currencies.hasRates ? 'loaded' : 'empty',
-          error: errorMessage,
+          error: error.message || 'General fetch error: Cannot get currencies',
         };
       },
     },
@@ -164,3 +182,5 @@ export const createCurrenciesSection = (
 
   return output;
 };
+
+console.debug('debug version 8452');

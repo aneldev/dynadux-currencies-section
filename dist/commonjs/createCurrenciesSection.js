@@ -41,10 +41,11 @@ var EActions;
 (function (EActions) {
     EActions["SET_CURRENCY"] = "CURRENCIES__SET_CURRENCY";
     EActions["UPDATE_REQUEST"] = "CURRENCIES__UPDATE_REQUEST";
-    EActions["UPDATE_RESPONSE"] = "CURRENCIES__UPDATE_RESPONSE";
+    EActions["UPDATE_PROMISE_ADD"] = "CURRENCIES__UPDATE_PROMISE_ADD";
+    EActions["UPDATE_PROMISES_FULFILL"] = "CURRENCIES__PROMISES_FULFILL";
     EActions["UPDATE_RESPONSE_SAVE"] = "CURRENCIES__UPDATE_RESPONSE_SAVE";
-    EActions["UPDATE_FAIL"] = "CURRENCIES__UPDATE_FAIL";
-    EActions["CURRENCIES_LOADED"] = "CURRENCIES__CURRENCIES_LOADED";
+    EActions["UPDATE_RESPONSE_FAILED"] = "CURRENCIES__UPDATE_RESPONSE_FAILED";
+    EActions["CURRENCIES_UPDATED"] = "CURRENCIES__CURRENCIES_UPDATED";
 })(EActions = exports.EActions || (exports.EActions = {}));
 exports.createCurrenciesSection = function (_a) {
     var _b;
@@ -57,6 +58,7 @@ exports.createCurrenciesSection = function (_a) {
             currencies: new commonJs_1.DynaCurrencies(),
             error: '',
             lastUpdate: null,
+            updateRequests: [],
         },
         reducers: (_b = {},
             _b[EActions.SET_CURRENCY] = function (_a) {
@@ -65,49 +67,62 @@ exports.createCurrenciesSection = function (_a) {
                 return { currency: currency };
             },
             _b[EActions.UPDATE_REQUEST] = function (_a) {
-                var loadState = _a.state.loadState, payload = _a.payload, dispatch = _a.dispatch;
+                var payload = _a.payload, dispatch = _a.dispatch;
                 var resolve = payload.resolve, reject = payload.reject;
-                if (loadState === 'loading')
-                    return;
+                dispatch(EActions.UPDATE_PROMISE_ADD, { resolve: resolve, reject: reject });
                 getCurrencies()
                     .then(function (currencyRates) {
-                    dispatch(EActions.UPDATE_RESPONSE, currencyRates);
-                    resolve && resolve(currencyRates);
+                    dispatch(EActions.UPDATE_RESPONSE_SAVE, currencyRates, { blockChange: true });
+                    dispatch(EActions.UPDATE_PROMISES_FULFILL, null);
                 })
                     .catch(function (error) {
                     console.error('currenciesSection: cannot send request to fetch currencies', error);
-                    dispatch(EActions.UPDATE_FAIL, error.message || 'General error, cannot fetch currencies');
-                    reject && reject(error);
+                    dispatch(EActions.UPDATE_RESPONSE_FAILED, error);
+                    dispatch(EActions.UPDATE_PROMISES_FULFILL, error);
                 });
                 return {
                     loadState: 'loading',
                     error: '',
                 };
             },
-            _b[EActions.UPDATE_RESPONSE] = function (_a) {
-                var payload = _a.payload, dispatch = _a.dispatch;
-                dispatch(EActions.UPDATE_RESPONSE_SAVE, payload, { blockChange: true });
-                dispatch(EActions.CURRENCIES_LOADED);
+            _b[EActions.UPDATE_PROMISE_ADD] = function (_a) {
+                var updateRequests = _a.state.updateRequests, payload = _a.payload, blockChange = _a.blockChange;
+                var updateRequest = payload;
+                blockChange();
+                return {
+                    updateRequests: updateRequests.concat(updateRequest),
+                };
+            },
+            _b[EActions.UPDATE_PROMISES_FULFILL] = function (_a) {
+                var _b = _a.state, currencies = _b.currencies, updateRequests = _b.updateRequests, payload = _a.payload, blockChange = _a.blockChange;
+                var error = payload;
+                if (!error)
+                    updateRequests.forEach(function (ur) { return ur.resolve && ur.resolve(currencies.getCurrencyRatesDic()); });
+                if (error)
+                    updateRequests.forEach(function (ur) { return ur.reject && ur.reject(currencies.getCurrencyRatesDic()); });
+                blockChange();
+                return { updateRequests: [] };
             },
             _b[EActions.UPDATE_RESPONSE_SAVE] = function (_a) {
-                var state = _a.state, payload = _a.payload;
+                var state = _a.state, payload = _a.payload, dispatch = _a.dispatch;
                 var currenciesRate = payload;
                 state.currencies.clearRates(); // For GC
                 state.currencies = null; // For GC
                 var newCurrencies = new commonJs_1.DynaCurrencies();
                 newCurrencies.updateRates(currenciesRate);
+                dispatch(EActions.CURRENCIES_UPDATED);
                 return {
                     loadState: 'loaded',
                     currencies: newCurrencies,
                     lastUpdate: new Date,
                 };
             },
-            _b[EActions.UPDATE_FAIL] = function (_a) {
-                var currencies = _a.state.currencies, payload = _a.payload;
-                var errorMessage = payload;
+            _b[EActions.UPDATE_RESPONSE_FAILED] = function (_a) {
+                var currencies = _a.state.currencies, payload = _a.payload, dispatch = _a.dispatch;
+                var error = payload;
                 return {
                     loadState: currencies.hasRates ? 'loaded' : 'empty',
-                    error: errorMessage,
+                    error: error.message || 'General fetch error: Cannot get currencies',
                 };
             },
             _b),
@@ -174,4 +189,5 @@ exports.createCurrenciesSection = function (_a) {
     };
     return output;
 };
+console.debug('debug version 8452');
 //# sourceMappingURL=createCurrenciesSection.js.map
