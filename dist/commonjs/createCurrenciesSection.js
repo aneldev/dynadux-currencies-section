@@ -189,5 +189,4 @@ exports.createCurrenciesSection = function (_a) {
     };
     return output;
 };
-console.debug('debug version 8452');
 //# sourceMappingURL=createCurrenciesSection.js.map
