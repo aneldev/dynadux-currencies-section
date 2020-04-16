@@ -182,5 +182,3 @@ export const createCurrenciesSection = (
 
   return output;
 };
-
-console.debug('debug version 8452');
